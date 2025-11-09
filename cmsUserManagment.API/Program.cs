@@ -17,14 +17,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-)
+);
 
 var redisOptionsConfiguration = builder.Configuration["Redis:Connection"];
 
 builder.Services.AddStackExchangeRedisCache(redisOptions =>
 {
     redisOptions.Configuration = redisOptionsConfiguration;
-});
+})
 
 builder.Services.AddSingleton<IJwtTokenProvider, JwtTokenProvider>(sp =>
 {
