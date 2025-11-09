@@ -1,0 +1,105 @@
+# This is the top-most .editorconfig file.
+root = true
+
+# All files
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# files
+[*.cs]
+
+# -------------------------------------------------------------------
+# Core Formatting Rules (Solves your DbContext issue)
+# -------------------------------------------------------------------
+
+# Indentation and Spacing
+indent_style = space
+indent_size = 4
+
+# Indent the contents of blocks (including lambdas => ...)
+csharp_indent_block_contents = true
+
+# Indent code within parentheses if it's wrapped
+csharp_indent_within_parentheses = true
+
+# Do not indent braces themselves
+csharp_indent_braces = false
+
+# Indent case contents within a switch block
+csharp_indent_case_contents = true
+
+
+# -------------------------------------------------------------------
+# New Line Preferences
+# -------------------------------------------------------------------
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_between_query_expression_clauses = true
+
+
+# -------------------------------------------------------------------
+# Spacing Preferences
+# -------------------------------------------------------------------
+csharp_space_after_cast = true
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_parentheses = false
+csharp_space_around_binary_operators = before_and_after
+
+
+# -------------------------------------------------------------------
+# Modern C# Code Style Preferences
+# -------------------------------------------------------------------
+
+# Use 'var' when the type is apparent
+dotnet_style_var_for_built_in_types = true
+dotnet_style_var_when_type_is_apparent = true
+dotnet_style_var_elsewhere = true
+
+# Use expression-bodied members for single-line methods/properties
+dotnet_style_expression_bodied_constructors = false
+dotnet_style_expression_bodied_methods = true
+dotnet_style_expression_bodied_operators = true
+dotnet_style_expression_bodied_properties = true
+dotnet_style_expression_bodied_indexers = true
+dotnet_style_expression_bodied_accessors = true
+
+# Prefer framework-defined type keyword (e.g., 'int') over BCL type name (e.g., 'Int32')
+dotnet_style_predefined_type_for_locals_parameters_members = true
+dotnet_style_predefined_type_for_member_access = true
+
+# Prefer 'using' statements to be at the top of the file
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+
+# Prefer pattern matching to avoid 'as' followed by a 'null' check
+dotnet_style_pattern_matching_over_as_with_null_check = true
+
+# Prefer conditional expression over 'if' for assignments
+dotnet_style_prefer_conditional_expression_over_assignment = true
+
+# Add 'this.' qualification for instance members
+dotnet_style_qualification_for_field = false
+dotnet_style_qualification_for_property = false
+dotnet_style_qualification_for_method = false
+dotnet_style_qualification_for_event = false
+
+# Use collection expressions (new in C# 12 / .NET 8)
+dotnet_style_prefer_collection_expression = true:suggestion
+
+# -------------------------------------------------------------------
+# Rule Severity
+# You can change 'suggestion' to 'warning' or 'error' to enforce
+# rules more strictly during builds.
+# -------------------------------------------------------------------
+dotnet_diagnostic.IDE0007.severity = suggestion # Use 'var'
+dotnet_diagnostic.IDE0017.severity = suggestion # Simplify object initialization
+dotnet_diagnostic.IDE0044.severity = suggestion # Make field readonly
+dotnet_diagnostic.IDE0055.severity = warning    # Fix formatting (this is an important one)
+dotnet_diagnostic.IDE0063.severity = suggestion # Use simple 'using' statement
+dotnet_diagnostic.IDE1006.severity = error      # Naming rule violations

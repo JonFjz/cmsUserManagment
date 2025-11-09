@@ -1,9 +1,11 @@
 using System.Text;
+
 using cmsUserManagment.Application.Common.Settings;
 using cmsUserManagment.Application.Interfaces;
 using cmsUserManagment.Infrastructure.Persistance;
 using cmsUserManagment.Infrastructure.Repositories;
 using cmsUserManagment.Infrastructure.Security;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

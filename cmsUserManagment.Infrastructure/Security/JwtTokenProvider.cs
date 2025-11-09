@@ -1,9 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+
 using cms.Domain.Entities;
+
 using cmsUserManagment.Application.Common.Settings;
 using cmsUserManagment.Application.Interfaces;
+
 using Microsoft.IdentityModel.Tokens;
 
 namespace cmsUserManagment.Infrastructure.Security;

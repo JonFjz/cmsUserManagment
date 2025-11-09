@@ -22,7 +22,8 @@ packages/
 # Logs
 *.log
 *.tlg
-*.tlog
+*.tlodotnet format cmsUserManagment.sln --verbosity detailed
+g
 *.etl
 
 # OS generated files
