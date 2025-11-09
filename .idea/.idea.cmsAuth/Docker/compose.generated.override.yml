@@ -1,0 +1,20 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  cmsauth:
+    build:
+      context: "/home/roses/RiderProjects/cmsAuth"
+      dockerfile: "cmsAuth.API/Dockerfile"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/cmsAuth.API.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "cmsauth.api:dev"
+    ports: []
+    volumes:
+    - "/home/roses/RiderProjects/cmsAuth/cmsAuth.API:/app:rw"
+    - "/home/roses/RiderProjects/cmsAuth:/src:rw"
+    - "/home/roses/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
