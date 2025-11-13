@@ -80,7 +80,7 @@ public class AuthenticationService(
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
 
-        if(user == null || refreshTokenObj.Expires < DateTime.Now) throw new GeneralErrorCodes(GeneralErrorCodes.notFound.code, GeneralErrorCodes.notFound.message);
+        if (user == null || refreshTokenObj.Expires < DateTime.Now) throw new GeneralErrorCodes(GeneralErrorCodes.notFound.code, GeneralErrorCodes.notFound.message);
 
         string newToken = _jwtTokenProvider.GenerateToken(user.Email, user.Id.ToString(), user.IsAdmin);
 
@@ -110,7 +110,7 @@ public class AuthenticationService(
         if (token != null && token.Expires > DateTime.Now)
             throw new AuthErrorCodes(AuthErrorCodes.tokenNotFound.code, AuthErrorCodes.tokenNotFound.message);
 
-        User? user = await  _dbContext.Users.FirstOrDefaultAsync(e => e.Id == token.UserId);
+        User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == token.UserId);
         if (user == null)
             throw new GeneralErrorCodes(GeneralErrorCodes.notFound.code, GeneralErrorCodes.notFound.message);
 
@@ -180,6 +180,6 @@ public class AuthenticationService(
         await _dbContext.TwoFactorAuthCodes.AddAsync(twoFactorCode);
         await _dbContext.SaveChangesAsync();
 
-        return new { twoFactorToken = twoFactorCode.Id.ToString()};
+        return new { twoFactorToken = twoFactorCode.Id.ToString() };
     }
 }
