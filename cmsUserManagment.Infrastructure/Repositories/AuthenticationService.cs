@@ -144,14 +144,13 @@ public class AuthenticationService(
             throw new AuthErrorCodes(AuthErrorCodes.InvalidVerificationCode.Code,
                 AuthErrorCodes.InvalidVerificationCode.Message);
 
-        _dbContext.TwoFactorAuthCodes.Remove(token);
-        await _dbContext.SaveChangesAsync();
-        await UpdateCache(user);
-
         string jwtToken = _jwtTokenProvider.GenerateToken(user.Email, user.Id.ToString(), user.IsAdmin);
         RefreshToken refreshtoken = new() { UserId = user.Id };
+
+        _dbContext.TwoFactorAuthCodes.Remove(token);
         await _dbContext.RefreshTokens.AddAsync(refreshtoken);
         await _dbContext.SaveChangesAsync();
+        await UpdateCache(user);
 
         return new LoginCredentials { jwtToken = jwtToken, refreshToken = refreshtoken.Id.ToString() };
     }
@@ -172,6 +171,7 @@ public class AuthenticationService(
         SetupCode setupInfo = tfa.GenerateSetupCode("cms", user.Email, key, false);
 
         user.TwoFactorSecret = key;
+
         await _dbContext.SaveChangesAsync();
         await UpdateCache(user);
 
@@ -185,6 +185,7 @@ public class AuthenticationService(
         if (user == null) throw new ArgumentNullException(nameof(user));
 
         user.IsTwoFactorEnabled = false;
+
         await _dbContext.SaveChangesAsync();
         await UpdateCache(user);
 
@@ -203,6 +204,7 @@ public class AuthenticationService(
         };
 
         string key = $"email:{user.Email}";
+
         await _cache.SetStringAsync(key, JsonSerializer.Serialize(cachedUser));
     }
 
@@ -222,6 +224,7 @@ public class AuthenticationService(
         }
 
         TwoFactorAuthCodes twoFactorCode = new() { UserId = user.Id };
+
         await _dbContext.TwoFactorAuthCodes.AddAsync(twoFactorCode);
         await _dbContext.SaveChangesAsync();
 
