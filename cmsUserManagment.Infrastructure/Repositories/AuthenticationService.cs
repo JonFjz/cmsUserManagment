@@ -21,8 +21,7 @@ public class AuthenticationService(
     IDistributedCache cache,
     AppDbContext dbContext,
     IJwtTokenProvider jwtTokenProvider,
-    JwtDecoder jwtDecoder)
-    : IAuthenticationService
+    JwtDecoder jwtDecoder) : IAuthenticationService
 {
     private readonly IDistributedCache _cache = cache;
     private readonly AppDbContext _dbContext = dbContext;
@@ -45,12 +44,10 @@ public class AuthenticationService(
         InputValidator.ValidatePassword(password);
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
-        if (user == null || !PasswordHelper.VerifyPassword(password, user.Password))
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
+        if (user == null || !PasswordHelper.VerifyPassword(password, user.Password)) throw GeneralErrorCodes.NotFound;
 
         return await GetRightToken(user);
     }
-
 
     public async Task<bool> Register(RegisterUser user)
     {
@@ -60,9 +57,8 @@ public class AuthenticationService(
 
         string key = $"email:{user.Email}";
 
-        if (await _cache.GetStringAsync(key) != null ||
-            await _dbContext.Users.AnyAsync(e => e.Email == user.Email))
-            throw new GeneralErrorCodes(GeneralErrorCodes.Conflict.Code, GeneralErrorCodes.Conflict.Message);
+        if (await _cache.GetStringAsync(key) != null || await _dbContext.Users.AnyAsync(e => e.Email == user.Email))
+            throw GeneralErrorCodes.Conflict;
 
         User newUser = new()
         {
@@ -79,16 +75,14 @@ public class AuthenticationService(
     public async Task<string> RefreshToken(Guid refreshToken, string jwtToken)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
-        RefreshToken? refreshTokenObj = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(e => e.UserId == userId && e.Id == refreshToken);
+        RefreshToken? refreshTokenObj =
+            await _dbContext.RefreshTokens.FirstOrDefaultAsync(e => e.UserId == userId && e.Id == refreshToken);
 
-        if (refreshTokenObj == null)
-            throw new AuthErrorCodes(AuthErrorCodes.TokenNotFound.Code, AuthErrorCodes.TokenNotFound.Message);
+        if (refreshTokenObj == null) throw AuthErrorCodes.TokenNotFound;
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
 
-        if (user == null || refreshTokenObj.Expires < DateTime.UtcNow)
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
+        if (user == null || refreshTokenObj.Expires < DateTime.UtcNow) throw GeneralErrorCodes.NotFound;
 
         string newToken = _jwtTokenProvider.GenerateToken(user.Email, user.Id.ToString(), user.IsAdmin);
 
@@ -101,19 +95,16 @@ public class AuthenticationService(
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
 
-        if (userId == Guid.Empty)
-            throw new AuthErrorCodes(AuthErrorCodes.BadToken.Code, AuthErrorCodes.BadToken.Message);
+        if (userId == Guid.Empty) throw AuthErrorCodes.BadToken;
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
 
-        if (user == null)
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
+        if (user == null) throw GeneralErrorCodes.NotFound;
 
         RefreshToken? refreshToken =
             await _dbContext.RefreshTokens.FirstOrDefaultAsync(e => e.UserId == userId && e.Id == rt);
 
-        if (refreshToken == null)
-            throw new AuthErrorCodes(AuthErrorCodes.FailedToLogOut.Code, AuthErrorCodes.FailedToLogOut.Message);
+        if (refreshToken == null) throw AuthErrorCodes.FailedToLogOut;
 
         _dbContext.RefreshTokens.Remove(refreshToken);
         await _cache.RemoveAsync($"email:{user.Email}");
@@ -124,13 +115,10 @@ public class AuthenticationService(
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-        if (user == null)
-            throw new AuthErrorCodes(AuthErrorCodes.TokenNotFound.Code, AuthErrorCodes.TokenNotFound.Message);
+        if (user == null) throw AuthErrorCodes.TokenNotFound;
 
         TwoFactorAuthenticator tfa = new();
-        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code))
-            throw new AuthErrorCodes(AuthErrorCodes.InvalidVerificationCode.Code,
-                AuthErrorCodes.InvalidVerificationCode.Message);
+        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code)) throw AuthErrorCodes.InvalidVerificationCode;
 
         user.IsTwoFactorEnabled = true;
         await _dbContext.SaveChangesAsync();
@@ -146,13 +134,10 @@ public class AuthenticationService(
             throw new AuthErrorCodes(AuthErrorCodes.TokenNotFound.Code, AuthErrorCodes.TokenNotFound.Message);
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == token.UserId);
-        if (user == null)
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
+        if (user == null) throw GeneralErrorCodes.NotFound;
 
         TwoFactorAuthenticator tfa = new();
-        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code))
-            throw new AuthErrorCodes(AuthErrorCodes.InvalidVerificationCode.Code,
-                AuthErrorCodes.InvalidVerificationCode.Message);
+        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code)) throw AuthErrorCodes.InvalidVerificationCode;
 
         string jwtToken = _jwtTokenProvider.GenerateToken(user.Email, user.Id.ToString(), user.IsAdmin);
         RefreshToken refreshtoken = new() { UserId = user.Id };
@@ -169,7 +154,7 @@ public class AuthenticationService(
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-        if (user == null) throw new ArgumentNullException(nameof(user));
+        if (user == null) throw GeneralErrorCodes.NotFound;
 
         byte[] secretKeyBytes = new byte[32];
         using RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -192,7 +177,7 @@ public class AuthenticationService(
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-        if (user == null) throw new ArgumentNullException(nameof(user));
+        if (user == null) throw GeneralErrorCodes.NotFound;
 
         user.IsTwoFactorEnabled = false;
         user.TwoFactorSecret = null;
@@ -206,30 +191,29 @@ public class AuthenticationService(
     public async Task<bool> UpdateAccount(string jwtToken, UpdateAccountRequest request)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
-        if (userId == Guid.Empty)
-            throw new AuthErrorCodes(AuthErrorCodes.BadToken.Code, AuthErrorCodes.BadToken.Message);
+        if (userId == Guid.Empty) throw AuthErrorCodes.BadToken;
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-        if (user == null)
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
+        if (user == null) throw GeneralErrorCodes.NotFound;
 
         string oldEmail = user.Email;
         bool emailChanged = false;
         bool anyChange = false;
 
-        if (!string.IsNullOrWhiteSpace(request.Email) && !string.Equals(request.Email, user.Email, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(request.Email) &&
+            !string.Equals(request.Email, user.Email, StringComparison.OrdinalIgnoreCase))
         {
             InputValidator.ValidateEmail(request.Email);
             bool exists = await _dbContext.Users.AnyAsync(e => e.Email == request.Email && e.Id != user.Id);
-            if (exists)
-                throw new GeneralErrorCodes(GeneralErrorCodes.Conflict.Code, GeneralErrorCodes.Conflict.Message);
+            if (exists) throw GeneralErrorCodes.Conflict;
 
             user.Email = request.Email!;
             emailChanged = true;
             anyChange = true;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Username) && !string.Equals(request.Username, user.Username, StringComparison.Ordinal))
+        if (!string.IsNullOrWhiteSpace(request.Username) &&
+            !string.Equals(request.Username, user.Username, StringComparison.Ordinal))
         {
             InputValidator.ValidateUsername(request.Username);
             user.Username = request.Username!;
@@ -240,20 +224,19 @@ public class AuthenticationService(
         {
             InputValidator.ValidatePassword(request.NewPassword!);
 
-            if (string.IsNullOrWhiteSpace(request.CurrentPassword) || !PasswordHelper.VerifyPassword(request.CurrentPassword!, user.Password))
-                throw new AuthErrorCodes(AuthErrorCodes.InvalidCredentials.Code, AuthErrorCodes.InvalidCredentials.Message);
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+                !PasswordHelper.VerifyPassword(request.CurrentPassword!, user.Password))
+                throw AuthErrorCodes.InvalidCredentials;
 
             user.Password = PasswordHelper.HashPassword(request.NewPassword!);
             anyChange = true;
         }
 
-        if (!anyChange)
-            return true;
+        if (!anyChange) return true;
 
         await _dbContext.SaveChangesAsync();
 
-        if (emailChanged)
-            await _cache.RemoveAsync($"email:{oldEmail}");
+        if (emailChanged) await _cache.RemoveAsync($"email:{oldEmail}");
 
         await UpdateCache(user);
         return true;
@@ -262,8 +245,7 @@ public class AuthenticationService(
     public async Task<object> GetUserInfo(string jwtToken)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
-        if (userId == Guid.Empty)
-            throw new AuthErrorCodes(AuthErrorCodes.BadToken.Code, AuthErrorCodes.BadToken.Message);
+        if (userId == Guid.Empty) throw AuthErrorCodes.BadToken;
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
         
