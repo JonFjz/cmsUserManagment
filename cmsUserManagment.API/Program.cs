@@ -109,6 +109,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<JwtValidationMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
