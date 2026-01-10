@@ -21,6 +21,10 @@ jobs:
             -f cmsUserManagment.API/Dockerfile \
             .
 
+      - name: Import Docker Image
+        run: |
+           docker save cmsusermanagement:latest | sudo ctr -n k8s.io images import -
+
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f kubernetes/deploy.yaml
