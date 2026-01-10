@@ -23,4 +23,4 @@ jobs:
 
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f https://raw.githubusercontent.com/JonFjz/cmsUserManagment/refs/heads/main/kubernetes/deploy.yaml
+          kubectl apply -f kubernetes/deploy.yaml
