@@ -28,14 +28,6 @@ public class AuthenticationService(
     private readonly JwtDecoder _jwtDecoder = jwtDecoder;
     private readonly IJwtTokenProvider _jwtTokenProvider = jwtTokenProvider;
 
-    public async Task<Guid> VerifyUser(string jwtToken)
-    {
-        Guid userId = _jwtDecoder.GetUserid(jwtToken);
-        User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-        if (user == null) throw GeneralErrorCodes.NotFound;
-        return user.Id;
-    }
-
     public async Task<object> Login(string email, string password)
     {
         InputValidator.ValidateEmail(email);

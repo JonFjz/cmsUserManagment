@@ -26,12 +26,6 @@ public class AuthController : ControllerBase
         _headersManager = headersManager;
     }
 
-    [HttpGet("VerifyUser")]
-    public async Task<Guid> VerifyUser()
-    {
-        return await _authenticationService.VerifyUser(_headersManager.GetJwtFromHeader(Request.Headers));
-    }
-
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<bool> Register([FromBody] RegisterUser newUser)
