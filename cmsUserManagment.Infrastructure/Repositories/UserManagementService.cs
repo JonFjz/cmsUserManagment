@@ -118,16 +118,16 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
         return true;
     }
 
-    public async Task<IEnumerable<User>> SearchUsers(string? username, string? email, bool? isAdmin,
-        string? orderBy = "username", bool descending = false)
+    public async Task<PaginatedResult<User>> SearchUsers(string? username, string? email, bool? isAdmin,
+        string? orderBy = "username", bool descending = false, int pageNumber = 1, int pageSize = 10)
     {
         string cacheKey =
-            $"search:username={username}&email={email}&isAdmin={isAdmin}&orderBy={orderBy}&desc={descending}";
+            $"search:username={username}&email={email}&isAdmin={isAdmin}&orderBy={orderBy}&desc={descending}&pageNumber={pageNumber}&pageSize={pageSize}";
         string? cachedResult = await _cache.GetStringAsync(cacheKey);
 
         if (!string.IsNullOrEmpty(cachedResult))
         {
-            return JsonSerializer.Deserialize<IEnumerable<User>>(cachedResult) ?? new List<User>();
+            return JsonSerializer.Deserialize<PaginatedResult<User>>(cachedResult) ?? new PaginatedResult<User>();
         }
 
         var query = _dbContext.Users.AsQueryable();
@@ -145,12 +145,21 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
             _ => descending ? query.OrderByDescending(u => u.Username) : query.OrderBy(u => u.Username)
         };
 
-        var users = await query.ToListAsync();
+        var totalCount = await query.CountAsync();
+        var users = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        
+        var result = new PaginatedResult<User>
+        {
+            Items = users,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
 
-        await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(users),
+        await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(result),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
-        return users;
+        return result;
     }
 
     private async Task UpdateAuthCache(User user)
