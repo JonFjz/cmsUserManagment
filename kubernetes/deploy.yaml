@@ -13,6 +13,11 @@ spec:
       labels:
         app: cms-user-management
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
       containers:
         - name: cms-user-management
           image: cmsusermanagement:latest
@@ -20,7 +25,6 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            # Add any env vars you need here
             - name: ConnectionStrings__DefaultConnection
               value: "Server=mysql;Database=auth;Uid=user;Pwd=alskjdfa@alskdjfAAAb12;"
             - name: Redis__Connection
@@ -33,13 +37,10 @@ spec:
               value: "account"
             - name: JwtSettings__ExpiryMinutes
               value: "60"
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        runAsNonRoot: true
-        limits:
-          nofile: 4096
+          resources:
+            limits:
+              nofile: 4096
+
 
 ---
 apiVersion: v1
