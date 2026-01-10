@@ -37,10 +37,6 @@ spec:
               value: "account"
             - name: JwtSettings__ExpiryMinutes
               value: "60"
-          resources:
-            limits:
-              nofile: 4096
-
 
 ---
 apiVersion: v1
