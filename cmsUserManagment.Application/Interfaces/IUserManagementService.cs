@@ -12,10 +12,12 @@ public interface IUserManagementService
     Task<bool> DeleteUser(Guid id);
     Task<bool> DeleteBulkUsers(IEnumerable<Guid> ids);
 
-    public Task<IEnumerable<User>> SearchUsers(
+    public Task<PaginatedResult<User>> SearchUsers(
         string? username,
         string? email,
         bool? isAdmin,
         string? orderBy = "username",
-        bool descending = false);
+        bool descending = false,
+        int pageNumber = 1,
+        int pageSize = 10);
 }

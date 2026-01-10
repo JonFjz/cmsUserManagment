@@ -30,9 +30,9 @@ public class UserManagementController(IUserManagementService userManagementServi
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchUsers([FromQuery] string? username, [FromQuery] string? email, [FromQuery] bool? isAdmin, [FromQuery] string? orderBy = "username", [FromQuery] bool descending = false)
+    public async Task<IActionResult> SearchUsers([FromQuery] string? username, [FromQuery] string? email, [FromQuery] bool? isAdmin, [FromQuery] string? orderBy = "username", [FromQuery] bool descending = false, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _userManagementService.SearchUsers(username, email, isAdmin, orderBy, descending);
+        var users = await _userManagementService.SearchUsers(username, email, isAdmin, orderBy, descending, pageNumber, pageSize);
         return Ok(users);
     }
 
