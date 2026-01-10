@@ -30,38 +30,29 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<bool> Register([FromBody] RegisterUser newUser)
-    public async Task<bool> Register([FromBody] RegisterUser newUser)
     {
-        return await _authenticationService.Register(newUser);
         return await _authenticationService.Register(newUser);
     }
 
     [HttpGet("login")]
     [AllowAnonymous]
     public async Task<object> Login(string email, string password)
-    public async Task<object> Login(string email, string password)
     {
-        return await _authenticationService.Login(email, password);
         return await _authenticationService.Login(email, password);
     }
 
     [HttpPost("logout")]
-    public async Task<bool> Logout([FromBody] Guid refreshToken)
     public async Task<bool> Logout([FromBody] Guid refreshToken)
     {
         string jwt = _headersManager.GetJwtFromHeader(Request.Headers);
 
         await _authenticationService.Logout(jwt, refreshToken);
         return true;
-        return true;
     }
 
     [HttpGet("refresh-token")]
     public async Task<string> RefreshToken(Guid refreshToken)
-    public async Task<string> RefreshToken(Guid refreshToken)
     {
-        return await _authenticationService.RefreshToken(refreshToken,
-            _headersManager.GetJwtFromHeader(Request.Headers));
         return await _authenticationService.RefreshToken(refreshToken,
             _headersManager.GetJwtFromHeader(Request.Headers));
     }
@@ -70,14 +61,11 @@ public class AuthController : ControllerBase
     public async Task<SetupCode> GenerateTwoFactorAuthSetupCode()
     {
         return await _authenticationService.GenerateAuthToken(_headersManager.GetJwtFromHeader(Request.Headers));
-        return await _authenticationService.GenerateAuthToken(_headersManager.GetJwtFromHeader(Request.Headers));
     }
 
     [HttpPost("two-factor-auth-confirm")]
     public async Task<bool> TwoFactorAuthenticationConfirm([FromBody] string code)
     {
-        return await _authenticationService.TwoFactorAuthenticationConfirm(
-            _headersManager.GetJwtFromHeader(Request.Headers), code);
         return await _authenticationService.TwoFactorAuthenticationConfirm(
             _headersManager.GetJwtFromHeader(Request.Headers), code);
     }
@@ -86,15 +74,12 @@ public class AuthController : ControllerBase
     public async Task<bool> DisableTwoFactorAuth()
     {
         return await _authenticationService.DisableTwoFactorAuth(_headersManager.GetJwtFromHeader(Request.Headers));
-        return await _authenticationService.DisableTwoFactorAuth(_headersManager.GetJwtFromHeader(Request.Headers));
     }
 
     [HttpPost("login-with-two-factor-auth")]
     [AllowAnonymous]
     public async Task<LoginCredentials> TwoFactorAuthenticationLogin(string loginId, string code)
-    public async Task<LoginCredentials> TwoFactorAuthenticationLogin(string loginId, string code)
     {
-        return await _authenticationService.TwoFactorAuthenticationLogin(Guid.Parse(loginId), code);
         return await _authenticationService.TwoFactorAuthenticationLogin(Guid.Parse(loginId), code);
     }
 
@@ -102,11 +87,9 @@ public class AuthController : ControllerBase
     public async Task<bool> UpdateAccount([FromBody] UpdateAccountRequest request)
     {
         return await _authenticationService.UpdateAccount(_headersManager.GetJwtFromHeader(Request.Headers), request);
-        return await _authenticationService.UpdateAccount(_headersManager.GetJwtFromHeader(Request.Headers), request);
     }
 
     [HttpGet("account-info")]
-    public async Task<object> GetAccountInfo()
     public async Task<object> GetAccountInfo()
     {
         return await _authenticationService.GetUserInfo(_headersManager.GetJwtFromHeader(Request.Headers));
