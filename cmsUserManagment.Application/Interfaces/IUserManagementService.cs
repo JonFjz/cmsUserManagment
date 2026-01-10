@@ -6,7 +6,7 @@ namespace cmsUserManagment.Application.Interfaces;
 
 public interface IUserManagementService
 {
-    Task<IEnumerable<User>> GetAllUsers();
+    Task<PaginatedResult<User>> GetAllUsers(int pageNumber, int pageSize);
     Task<User?> GetUserById(Guid id);
     Task<bool> UpdateUser(Guid id, UpdateUserDto user);
     Task<bool> DeleteUser(Guid id);

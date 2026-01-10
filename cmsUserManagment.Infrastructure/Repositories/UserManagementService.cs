@@ -17,10 +17,19 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
     private readonly AppDbContext _dbContext = dbContext;
     private readonly IDistributedCache _cache = cache;
 
-    public async Task<IEnumerable<User>> GetAllUsers()
+    public async Task<PaginatedResult<User>> GetAllUsers(int pageNumber, int pageSize)
     {
-        var users = await _dbContext.Users.ToListAsync();
-        return users;
+        var query = _dbContext.Users.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PaginatedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async Task<User?> GetUserById(Guid id)

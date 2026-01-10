@@ -16,9 +16,9 @@ public class UserManagementController(IUserManagementService userManagementServi
     private readonly IUserManagementService _userManagementService = userManagementService;
 
     [HttpGet]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _userManagementService.GetAllUsers();
+        var users = await _userManagementService.GetAllUsers(pageNumber, pageSize);
         return Ok(users);
     }
 
