@@ -34,6 +34,18 @@ builder.Services.AddSingleton<IJwtTokenProvider, JwtTokenProvider>(sp =>
     return new JwtTokenProvider(jwtSettings);
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        policy =>
+        {
+            policy.SetIsOriginAllowed(origin => true)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
+
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -60,6 +72,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
 
     // Add JWT Authentication support in Swagger
     options.AddSecurityDefinition(
@@ -107,6 +123,8 @@ app.UsePathBase("/api/auth");
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseCors("AllowSpecificOrigins");
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<JwtValidationMiddleware>();

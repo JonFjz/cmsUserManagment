@@ -30,8 +30,6 @@ public class AuthErrorCodes : Exception
     public static AuthErrorCodes SessionExpired
         => new(7, "User session has expired. Please log in again.");
 
-
-
     public static AuthErrorCodes LoginFailed
         => new(8, "Login failed due to invalid username or password.");
 
@@ -43,4 +41,7 @@ public class AuthErrorCodes : Exception
 
     public static AuthErrorCodes InvalidCredentials
         => new(11, "There has been an error validating your credentials.");
+
+    public static AuthErrorCodes TwoFactorRequired
+        => new(12, "Two-factor authentication is required for this account.");
 }
