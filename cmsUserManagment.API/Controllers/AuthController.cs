@@ -7,7 +7,7 @@ using Google.Authenticator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace cmsUserManagment.Controllers;
+namespace cmsUserManagment.API.Controllers;
 
 [Route("api/auth")]
 [ApiController]
@@ -28,12 +28,12 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<object> Register([FromBody] RegisterUser newUser)
     {
         var success = await _authenticationService.Register(newUser);
-        return new { success };
+        return new { success, data = (object)null };
     }
 
     /// <summary>
@@ -49,7 +49,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> Login([FromBody] LoginUser loginRequest)
     {
-        return await _authenticationService.Login(loginRequest.Email, loginRequest.Password);
+        var result = await _authenticationService.Login(loginRequest.Email, loginRequest.Password);
+        return new { success = true, data = result };
     }
 
     /// <summary>
@@ -58,14 +59,14 @@ public class AuthController : ControllerBase
     /// <param name="refreshToken">The refresh token.</param>
     /// <returns>True if logout was successful.</returns>
     [HttpPost("logout")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> Logout([FromBody] LogoutRequest request)
     {
         string jwt = _headersManager.GetJwtFromHeader(Request.Headers);
         await _authenticationService.Logout(jwt, request.RefreshToken);
-        return new { success = true };
+        return new { success = true, data = (object)null };
     }
 
     /// <summary>
@@ -74,14 +75,14 @@ public class AuthController : ControllerBase
     /// <param name="refreshToken">The refresh token.</param>
     /// <returns>A new JWT token.</returns>
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         var jwtToken = await _authenticationService.RefreshToken(request.RefreshToken,
             _headersManager.GetJwtFromHeader(Request.Headers));
-        return new { jwtToken };
+        return new { success = true, data = jwtToken };
     }
 
     /// <summary>
@@ -89,12 +90,12 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <returns>The setup code and QR code URL.</returns>
     [HttpPost("2fa/setup")]
-    [ProducesResponseType(typeof(SetupCode), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> GenerateTwoFactorAuthSetupCode()
     {
         var setupCode = await _authenticationService.GenerateAuthToken(_headersManager.GetJwtFromHeader(Request.Headers));
-        return new { setupCode };
+        return new { success = true, data = setupCode };
     }
 
     /// <summary>
@@ -103,27 +104,28 @@ public class AuthController : ControllerBase
     /// <param name="code">The confirmation code.</param>
     /// <returns>True if confirmation was successful.</returns>
     [HttpPost("2fa/confirm")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<object> TwoFactorAuthenticationConfirm([FromBody] TwoFactorCodeInput input)
+    public async Task<object> TwoFactorAuthenticationConfirm([FromBody] TwoFactorConfirmRequest input)
     {
         var success = await _authenticationService.TwoFactorAuthenticationConfirm(
-            _headersManager.GetJwtFromHeader(Request.Headers), input.code);
-        return new { success };
+            _headersManager.GetJwtFromHeader(Request.Headers), input.Code);
+        return new { success, data = (object)null };
     }
 
     /// <summary>
     /// Disables two-factor authentication.
     /// </summary>
     /// <returns>True if disabled successfully.</returns>
-    [HttpDelete("2fa/disable")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [HttpPost("2fa/disable")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<object> DisableTwoFactorAuth()
+    public async Task<object> DisableTwoFactorAuth([FromBody] TwoFactorConfirmRequest input)
     {
-        var success = await _authenticationService.DisableTwoFactorAuth(_headersManager.GetJwtFromHeader(Request.Headers));
-        return new { success };
+        var success = await _authenticationService.DisableTwoFactorAuth(_headersManager.GetJwtFromHeader(Request.Headers), input.Code);
+        return new { success, data = (object)null };
     }
 
     /// <summary>
@@ -134,13 +136,13 @@ public class AuthController : ControllerBase
     /// <returns>The login credentials.</returns>
     [HttpPost("2fa/login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(LoginCredentials), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> TwoFactorAuthenticationLogin([FromBody] TwoFactorLoginRequest request)
     {
         var credentials = await _authenticationService.TwoFactorAuthenticationLogin(request.LoginId, request.Code);
-        return new { jwtToken = credentials.jwtToken, refreshToken = credentials.refreshToken };
+        return new { success = true, data = new { jwtToken = credentials.jwtToken, refreshToken = credentials.refreshToken } };
     }
 
     /// <summary>
@@ -149,13 +151,13 @@ public class AuthController : ControllerBase
     /// <param name="request">The update request.</param>
     /// <returns>True if the update was successful.</returns>
     [HttpPut("account")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<object> UpdateAccount([FromBody] UpdateAccountRequest request)
     {
         var success = await _authenticationService.UpdateAccount(_headersManager.GetJwtFromHeader(Request.Headers), request);
-        return new { success };
+        return new { success, data = (object)null };
     }
 
     /// <summary>
@@ -168,6 +170,6 @@ public class AuthController : ControllerBase
     public async Task<object> GetAccountInfo()
     {
         var info = await _authenticationService.GetUserInfo(_headersManager.GetJwtFromHeader(Request.Headers));
-        return new { info };
+        return new { success = true, data = info };
     }
 }

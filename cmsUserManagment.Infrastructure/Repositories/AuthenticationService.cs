@@ -183,11 +183,14 @@ public class AuthenticationService(
         return setupInfo;
     }
 
-    public async Task<bool> DisableTwoFactorAuth(string jwtToken)
+    public async Task<bool> DisableTwoFactorAuth(string jwtToken, string code)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
         if (user == null) throw GeneralErrorCodes.NotFound;
+
+        TwoFactorAuthenticator tfa = new();
+        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code)) throw AuthErrorCodes.InvalidVerificationCode;
 
         user.IsTwoFactorEnabled = false;
         user.TwoFactorSecret = null;
