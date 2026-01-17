@@ -14,17 +14,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build Docker image
         run: |
           docker build \
-            -t cmsusermanagement:latest \
+            -t cmsusermanagement:${IMAGE_TAG} \
             -f cmsUserManagment.API/Dockerfile \
             .
 
       - name: Import Docker Image
         run: |
-           docker save cmsusermanagement:latest | sudo ctr -n k8s.io images import -
+           docker save cmsusermanagement:${IMAGE_TAG} | sudo ctr -n k8s.io images import -
 
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f kubernetes/deploy.yaml
+          envsubst < kubernetes/deploy.yaml | kubectl apply -f -
