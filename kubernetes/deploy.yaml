@@ -20,7 +20,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: cms-user-management
-          image: cmsusermanagement:latest
+          image: cmsusermanagement:${IMAGE_TAG}
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
