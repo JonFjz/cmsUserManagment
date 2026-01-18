@@ -75,6 +75,7 @@ public class AuthController : ControllerBase
     /// <param name="refreshToken">The refresh token.</param>
     /// <returns>A new JWT token.</returns>
     [HttpPost("refresh")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
