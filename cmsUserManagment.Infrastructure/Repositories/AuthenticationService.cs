@@ -28,16 +28,6 @@ public class AuthenticationService(
     private readonly JwtDecoder _jwtDecoder = jwtDecoder;
     private readonly IJwtTokenProvider _jwtTokenProvider = jwtTokenProvider;
 
-    public async Task<Guid> VerifyUser(string jwtToken)
-    {
-        Guid userId = _jwtDecoder.GetUserid(jwtToken);
-
-        if (!await _dbContext.Users.AnyAsync(u => u.Id == userId))
-            throw new GeneralErrorCodes(GeneralErrorCodes.NotFound.Code, GeneralErrorCodes.NotFound.Message);
-
-        return userId;
-    }
-
     public async Task<object> Login(string email, string password)
     {
         InputValidator.ValidateEmail(email);
@@ -46,7 +36,31 @@ public class AuthenticationService(
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
         if (user == null || !PasswordHelper.VerifyPassword(password, user.Password)) throw GeneralErrorCodes.NotFound;
 
-        return await GetRightToken(user);
+        if (!user.IsTwoFactorEnabled)
+        {
+            string token = _jwtTokenProvider.GenerateToken(user.Email, user.Id.ToString(), user.IsAdmin);
+            RefreshToken refreshtoken = new() { UserId = user.Id };
+            await _dbContext.RefreshTokens.AddAsync(refreshtoken);
+            await _dbContext.SaveChangesAsync();
+            await UpdateCache(user);
+            return new {
+                jwtToken = token,
+                refreshToken = refreshtoken.Id.ToString(),
+                twoFactorId = (string?)null
+            };
+        }
+        else
+        {
+            TwoFactorAuthCode twoFactorCode = new() { UserId = user.Id };
+            await _dbContext.TwoFactorAuthCodes.AddAsync(twoFactorCode);
+            await _dbContext.SaveChangesAsync();
+            await UpdateCache(user);
+            return new {
+                jwtToken = (string?)null,
+                refreshToken = (string?)null,
+                twoFactorId = twoFactorCode.Id.ToString()
+            };
+        }
     }
 
     public async Task<bool> Register(RegisterUser user)
@@ -91,22 +105,18 @@ public class AuthenticationService(
         return newToken;
     }
 
-    public async Task Logout(string jwtToken, Guid rt)
+    public async Task Logout(string jwtToken, Guid refreshToken)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
-
         if (userId == Guid.Empty) throw AuthErrorCodes.BadToken;
 
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
-
         if (user == null) throw GeneralErrorCodes.NotFound;
 
-        RefreshToken? refreshToken =
-            await _dbContext.RefreshTokens.FirstOrDefaultAsync(e => e.UserId == userId && e.Id == rt);
+        RefreshToken? tokenObj = await _dbContext.RefreshTokens.FirstOrDefaultAsync(e => e.UserId == userId && e.Id == refreshToken);
+        if (tokenObj == null) throw AuthErrorCodes.FailedToLogOut;
 
-        if (refreshToken == null) throw AuthErrorCodes.FailedToLogOut;
-
-        _dbContext.RefreshTokens.Remove(refreshToken);
+        _dbContext.RefreshTokens.Remove(tokenObj);
         await _cache.RemoveAsync($"email:{user.Email}");
         await _dbContext.SaveChangesAsync();
     }
@@ -173,11 +183,14 @@ public class AuthenticationService(
         return setupInfo;
     }
 
-    public async Task<bool> DisableTwoFactorAuth(string jwtToken)
+    public async Task<bool> DisableTwoFactorAuth(string jwtToken, string code)
     {
         Guid userId = _jwtDecoder.GetUserid(jwtToken);
         User? user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Id == userId);
         if (user == null) throw GeneralErrorCodes.NotFound;
+
+        TwoFactorAuthenticator tfa = new();
+        if (!tfa.ValidateTwoFactorPIN(user.TwoFactorSecret, code)) throw AuthErrorCodes.InvalidVerificationCode;
 
         user.IsTwoFactorEnabled = false;
         user.TwoFactorSecret = null;
@@ -293,6 +306,7 @@ public class AuthenticationService(
 
         await UpdateCache(user);
 
-        return new { twoFactorToken = twoFactorCode.Id.ToString() };
+        // Instead of returning an anonymous object, throw a specific exception for two-factor required
+        throw AuthErrorCodes.TwoFactorRequired;
     }
 }

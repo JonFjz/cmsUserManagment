@@ -17,10 +17,19 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
     private readonly AppDbContext _dbContext = dbContext;
     private readonly IDistributedCache _cache = cache;
 
-    public async Task<IEnumerable<User>> GetAllUsers()
+    public async Task<PaginatedResult<User>> GetAllUsers(int pageNumber, int pageSize)
     {
-        var users = await _dbContext.Users.ToListAsync();
-        return users;
+        var query = _dbContext.Users.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PaginatedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async Task<User?> GetUserById(Guid id)
@@ -109,16 +118,16 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
         return true;
     }
 
-    public async Task<IEnumerable<User>> SearchUsers(string? username, string? email, bool? isAdmin,
-        string? orderBy = "username", bool descending = false)
+    public async Task<PaginatedResult<User>> SearchUsers(string? username, string? email, bool? isAdmin,
+        string? orderBy = "username", bool descending = false, int pageNumber = 1, int pageSize = 10)
     {
         string cacheKey =
-            $"search:username={username}&email={email}&isAdmin={isAdmin}&orderBy={orderBy}&desc={descending}";
+            $"search:username={username}&email={email}&isAdmin={isAdmin}&orderBy={orderBy}&desc={descending}&pageNumber={pageNumber}&pageSize={pageSize}";
         string? cachedResult = await _cache.GetStringAsync(cacheKey);
 
         if (!string.IsNullOrEmpty(cachedResult))
         {
-            return JsonSerializer.Deserialize<IEnumerable<User>>(cachedResult) ?? new List<User>();
+            return JsonSerializer.Deserialize<PaginatedResult<User>>(cachedResult) ?? new PaginatedResult<User>();
         }
 
         var query = _dbContext.Users.AsQueryable();
@@ -136,12 +145,21 @@ public class UserManagementService(AppDbContext dbContext, IDistributedCache cac
             _ => descending ? query.OrderByDescending(u => u.Username) : query.OrderBy(u => u.Username)
         };
 
-        var users = await query.ToListAsync();
+        var totalCount = await query.CountAsync();
+        var users = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        
+        var result = new PaginatedResult<User>
+        {
+            Items = users,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
 
-        await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(users),
+        await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(result),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
-        return users;
+        return result;
     }
 
     private async Task UpdateAuthCache(User user)

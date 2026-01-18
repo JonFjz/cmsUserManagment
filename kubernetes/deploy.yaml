@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cms-user-management
+  namespace: cms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cms-user-management
+  template:
+    metadata:
+      labels:
+        app: cms-user-management
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      containers:
+        - name: cms-user-management
+          image: cmsusermanagement:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=mysql;Database=auth;Uid=user;Pwd=alskjdfa@alskdjfAAAb12;"
+            - name: Redis__Connection
+              value: "redis:6379"
+            - name: JwtSettings__Secret
+              value: "4ba5b968796f41d8de85d6063fe4929d2cb649594090b9d778e54680ec273341"
+            - name: JwtSettings__Issuer
+              value: "cms"
+            - name: JwtSettings__Audience
+              value: "account"
+            - name: JwtSettings__ExpiryMinutes
+              value: "60"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cms-user-management
+  namespace: cms
+spec:
+  type: ClusterIP
+  selector:
+    app: cms-user-management
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
